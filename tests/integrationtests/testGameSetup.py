@@ -7,18 +7,17 @@ from src.Zone import Zone
 from src.Deck import Deck
 
 
-class testMain(TestCase):
+class testGameSetup(TestCase):
 
-	def testGameSetup(self):
+	def setupGame(self):
 		players = self.createPlayers()
 		zones = self.createZones()
-		game = self.createGame(players, zones)
-		return game
+		self.game = self.createGame(players, zones)
 
 	def createPlayers(self):
-		Alice = self.createPlayer("Allice")
-		Bob = self.createPlayer("Bob")
-		players = [Alice, Bob]
+		self.Alice = self.createPlayer("Alice")
+		self.Bob = self.createPlayer("Bob")
+		players = [self.Alice, self.Bob]
 		return players
 
 	def createPlayer(self, name):
@@ -50,9 +49,17 @@ class testMain(TestCase):
 		AliceSideboard = Zone('Sideboard')
 		BobSideboard = Zone('Sideboard')
 		exile = Zone('Exile')
-		zones = [AliceBattleField, AliceGraveyard, AliceHand, AliceLibrary, AliceSideboard,
-						 BobBattleField, BobGraveyard, BobHand, BobLibrary, BobSideboard,
-						 exile]
+		aliceZones = [AliceBattleField, AliceGraveyard, AliceHand, AliceLibrary, AliceSideboard]
+		bobZones = [BobBattleField, BobGraveyard, BobHand, BobLibrary, BobSideboard]
+		sharedZones = [exile]
+		for zone in aliceZones:
+			zone.addOwner(self.Alice)
+		for zone in bobZones:
+			zone.addOwner(self.Bob)
+		for zone in sharedZones:
+			zone.addOwner(self.Alice)
+			zone.addOwner(self.Bob)
+		zones = aliceZones+bobZones+sharedZones
 		return zones
 
 	def createGame(self, players, zones):
@@ -60,3 +67,17 @@ class testMain(TestCase):
 		for player in players: game.addPlayer(player)
 		for zone in zones: game.addZone(zone)
 		return game
+
+	def setUp(self):
+		self.setupGame()
+
+	def testThatThereAreTwoPlayersInTheGame(self):
+		players = self.game.players
+		self.assertIn("Alice", [player.name for player in players])
+		self.assertIn("Bob", [player.name for player in players])
+
+	def testThatEachPlayerHasAGraveyard(self):
+		aliceZoneNames = [zone.name for zone in self.Alice.zones]
+		bobZoneNames = [zone.name for zone in self.Bob.zones]
+		self.assertIn('Graveyard', aliceZoneNames)
+		self.assertIn('Graveyard', bobZoneNames)
